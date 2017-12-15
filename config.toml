@@ -1,0 +1,13 @@
+[SMTP]
+server = ""
+port = 31337
+username = ""
+password = ""
+
+[MAIL]
+subject = "Your Slice is here"
+sender = ""
+
+
+
+
