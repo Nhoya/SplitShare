@@ -4,7 +4,7 @@ Shamir's Secret Sharing Algorithm implementation in Golang combined with PGP and
 SplitShare uses [Shamir's Secret Sharing Algorithm](https://en.wikipedia.org/wiki/Shamir%27s_Secret_Sharing) to split a secret in multiple parts and [PGP](https://it.wikipedia.org/wiki/Pretty_Good_Privacy) to encrypt each share with the public key of the owner and then send the encrypted share via mail.
 
 ## Usage
-You can download and run the compiled binary or build it from source.
+You can download and run [the pre-builted binary](https://github.com/Nhoya/SplitShare/releases/latest) or build it from source.
 
 To work properly SplitShare needs:
 
@@ -39,9 +39,10 @@ You can then build it with `go build splitshare.go`
 
 ## Decrypt
 To decrypt the secret you need the tool located inside the `decrypt` directory
-You can either build it or use the pre-builted one.
 
-### Building de decryption tool
+You can either build it or use [the pre-builted one](https://github.com/Nhoya/SplitShare/releases/latest).
+
+### Building the decryption tool
 To build the decryption tool you just need:
 
 `github.com/SSSaaS/sssa-golang`
