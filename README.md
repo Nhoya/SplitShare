@@ -23,6 +23,10 @@ And for each user:
 - The users mail
 - The path of the public key
 
+Alternatively you can load a public keyring file with users public key and SplitShare will automatically load keys from user's email.
+
+`./splitshare --pub-keyring ./pubring.gpg <SECRET FILE>`
+
 *NOTE*: you must configure the SMTP credentials inside the `config.toml` file.
 
 ## Building

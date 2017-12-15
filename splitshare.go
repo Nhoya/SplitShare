@@ -1,12 +1,14 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/SSSaaS/sssa-golang"
 	"github.com/TheZ3ro/go-pgp/pgp"
+	"golang.org/x/crypto/openpgp"
 	"github.com/go-mail/mail"
 	"github.com/spf13/viper"
 )
@@ -34,7 +36,7 @@ func splitSecret(secret []byte) []string {
 	fmt.Scan(&totalShares)
 	fmt.Print("Insert Minumim number of Slices to decrypt the secret: ")
 	fmt.Scan(&minShares)
-	if (minShares >= totalShares) || (minShares <= 0) {
+	if (minShares > totalShares) || (minShares <= 0) {
 		fmt.Println("The minimum nuber of Slices must be lower than the total number of Slices")
 		os.Exit(1)
 	}
@@ -48,30 +50,47 @@ func splitSecret(secret []byte) []string {
 	return shares
 }
 
-func registerUsers(users []User, share string) []User {
+func registerUsers(users []User, share string, useKeyring bool) []User {
 	newUser := User{}
 	newUser.share = share
 	fmt.Print("Enter email: ")
 	fmt.Scanln(&newUser.mail)
-	fmt.Print("Enter keypath: ")
-	fmt.Scanln(&newUser.keypath)
+	if useKeyring {
+		newUser.keypath = ""
+	} else {
+		fmt.Print("Enter keypath: ")
+		fmt.Scanln(&newUser.keypath)
+	}
 	users = append(users, newUser)
 	return users
 }
 
-func encryptPassword(person User, conf MailConf) {
+func encryptPassword(person User, conf MailConf, publicKeyring openpgp.EntityList) {
 	fmt.Println("[+] Encrypting message for " + person.mail)
-	key, err := ioutil.ReadFile(person.keypath)
-	if err != nil {
-		fmt.Println("Unable to read keyfile " + person.keypath)
-		os.Exit(1)
+
+	var pubEntity *openpgp.Entity = nil
+	if publicKeyring != nil {
+		pubEntity = pgp.GetKeyByEmail(publicKeyring, string(person.mail))
+	} else {
+		key, err := ioutil.ReadFile(person.keypath)
+		if err != nil {
+			fmt.Println("Unable to read keyfile " + person.keypath)
+			os.Exit(1)
+		}
+
+		pubEntity, err = pgp.GetEntity(key, []byte{})
+		if err != nil {
+			fmt.Println("Unable to generate public Entity")
+			os.Exit(1)
+		}
 	}
 
-	pubEntity, err := pgp.GetEntity(key, []byte{})
-	if err != nil {
-		fmt.Println("Unable to generate public Entity")
+	if pubEntity == nil {
+		fmt.Println("Unable to load public key for entity:", person.mail)
 		os.Exit(1)
 	}
+	fingerprint := pgp.GetFingerprint(pubEntity)
+	fmt.Println("[+] Selected key with fingerprint:", fingerprint)
 
 	encrypted, err := pgp.Encrypt(pubEntity, []byte(person.share))
 	if err != nil {
@@ -123,11 +142,17 @@ func main() {
 	users := []User{}
 	conf := MailConf{}
 
-	if len(os.Args) != 2 {
+    var publicKeyring string
+    flag.StringVar(&publicKeyring, "pub-keyring", "", "the keyring path")
+    flag.Parse()
+
+    fmt.Println(publicKeyring)
+
+	if len(flag.Args()) != 1 {
 		fmt.Println("You must specify the secret file")
 		os.Exit(1)
 	}
-	secretFile := os.Args[1]
+	secretFile := flag.Arg(0)
 	secret, err := ioutil.ReadFile(secretFile)
 	if err != nil {
 		panic("Unable to read secret file")
@@ -135,12 +160,21 @@ func main() {
 	shares := splitSecret(secret)
 	fmt.Println("[+] Adding Users")
 	for _, share := range shares {
-		users = registerUsers(users, share)
+		users = registerUsers(users, share, publicKeyring != "")
 	}
 
 	conf = initConfig(conf)
 
+	var keyring openpgp.EntityList = nil
+	if publicKeyring != "" {
+		keyring, err = pgp.OpenKeyring(publicKeyring)
+		if err != nil {
+			fmt.Println("Error loading keyring: %s", err)
+			os.Exit(1)
+		}
+	}
+
 	for _, person := range users {
-		encryptPassword(person, conf)
+		encryptPassword(person, conf, keyring)
 	}
 }
