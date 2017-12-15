@@ -35,7 +35,12 @@ github.com/go-mail/mail
 github.com/spf13/viper
 ```
 
-You can then build it with `go build splitshare.go`
+You can then clone the repo and build it with:
+
+```
+git clone https://github.com/Nhoya/SplitShare
+go build splitshare.go
+```
 
 ## Decrypt
 To decrypt the secret you need the tool located inside the `decrypt` directory
@@ -47,5 +52,11 @@ To build the decryption tool you just need:
 
 `github.com/SSSaaS/sssa-golang`
 
-You can then build it with `go build decrypt/decrypt.go`
+You can then clone the repo and build it with 
+
+```
+git clone https://github.com/Nhoya/SplitShare
+cd SplitShare/decrypt
+go build decrypt.go
+```
 
